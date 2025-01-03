@@ -21,7 +21,14 @@
 | CFI          | Control Flow Instruction                 | 控制流指令                              |
 | PC           | Program Counter                          | 程序计数器                              |
 | ITLB         | Instruction Translation Lookaside Buffer | 指令地址转译后备缓冲器                  |
-| InstrUncache | Instruction Ucache Module                | 指令 MMIO 处理单元                        |
+| InstrUncache | Instruction Ucache Module                | 指令 MMIO 取指处理单元                        |
+
+## 子模块列表
+
+| 子模块 | 描述 |
+| --- | --- |
+| [PreDecoder](PreDecoder.md) | 预译码模块 |
+| InstrUncache | 指令 MMIO 取指处理单元 |
 
 ## 功能描述
 
