@@ -129,15 +129,20 @@ DataArray 中的 cacheline 默认分为 8 个 bank 存储，每个 bank 中存�
 | 冲刷原因 | 1 | 2 | 3 | 4 |
 | --- | --- | --- | --- | --- |
 | 后端/IFU 重定向 | Y | | Y | Y |
-| BPU 重定向\* | Y | | | |
-| `fence.i` | Y | Y | Y | Y |
+| BPU 重定向[^redirect_tab_bpu] | Y | | | |
+| `fence.i` | [^redirect_tab_fencei] | Y | [^redirect_tab_fencei] | Y |
 
-\* BPU 精确预测器（BPU s2/s3 给出结果）可能覆盖简单预测器（BPU s0 给出结果）的预测，显然其重定向请求最晚在预取请求  的1- 2拍之后就到达 ICache，因此仅需要：
+[^redirect_tab_bpu]: BPU 精确预测器（BPU s2/s3 给出结果）可能覆盖简单预测器（BPU s0 给出结果）的预测，显然其重定向请求最晚在预取请求的 1- 2 拍之后就到达 ICache，因此仅需要：
 
-- BPU s2 redirect：冲刷 IPrefetchPipe s0
-- BPU s3 redirect：冲刷 IPrefetchPipe s0/1
-- 当 IPrefetchPipe 的对应流水级中的请求来自于软件预取时 `isSoftPrefetch === true.B`，不需要进行冲刷
-- 当 IprefetchPipe 的对应流水级中的请求来自于硬件预取，但 `ftqIdx` 与冲刷请求不匹配时，不需要进行冲刷
+    BPU s2 redirect：冲刷 IPrefetchPipe s0
+
+    BPU s3 redirect：冲刷 IPrefetchPipe s0/1
+
+    当 IPrefetchPipe 的对应流水级中的请求来自于软件预取时 `isSoftPrefetch === true.B`，不需要进行冲刷
+
+    当 IprefetchPipe 的对应流水级中的请求来自于硬件预取，但 `ftqIdx` 与冲刷请求不匹配时，不需要进行冲刷
+
+[^redirect_tab_fencei]: `fence.i` 在逻辑上需要冲刷 MainPipe 和 IPrefetchPipe（因为此时流水级中的数据可能无效），但实际上`io.fencei`拉高必然伴随一个后端重定向，因此目前的实现中没有冲刷 MainPipe 和 IPrefetchPipe 的必要。
 
 ICache 进行冲刷时不接收取指/预取请求（`io.req.ready === false.B`）
 
