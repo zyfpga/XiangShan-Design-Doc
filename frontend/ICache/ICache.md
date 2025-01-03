@@ -1,9 +1,9 @@
 # XiangShan ICache 设计文档
 
 - 版本：V2R2
-- 状态：WIP
-- 日期：2024/12/24
-- commit：[fad7803d97ed4a987a743036cec42d1c07b48e2e](https://github.com/OpenXiangShan/XiangShan/tree/fad7803d97ed4a987a743036cec42d1c07b48e2e)
+- 状态：OK
+- 日期：2025/01/03
+- commit：[6c106319588f5988a282dc2e7c687a9d44e9c209](https://github.com/OpenXiangShan/XiangShan/tree/6c106319588f5988a282dc2e7c687a9d44e9c209)
 
 ## 术语说明
 
@@ -62,7 +62,7 @@
 | nWayLookupSize | 32 | WayLookup 深度，同时可以反压限制预取最大距离 | |
 | DataCodeUnit | 64 | 校验单元大小，单位为 bit，每 64bit 对应 1bit 的校验位 | |
 | ICacheDataBanks | 8 | cacheline 划分 bank 数量 | |
-| ICacheDataSRAMWidth | 66 | DataArray 基本 SRAM 的宽度 | 大于 data 和 code 宽度之和 |
+| ICacheDataSRAMWidth | 66 | DataArray 基本 SRAM 的宽度 | 大于每 bank 的 data 和 code 宽度之和 |
 
 ## 功能概述
 
@@ -129,8 +129,8 @@ DataArray 中的 cacheline 默认分为 8 个 bank 存储，每个 bank 中存�
 | 冲刷原因 | 1 | 2 | 3 | 4 |
 | --- | --- | --- | --- | --- |
 | 后端/IFU 重定向 | Y | | Y | Y |
-| BPU 重定向[^redirect_tab_bpu] | Y | | | |
-| `fence.i` | [^redirect_tab_fencei] | Y | [^redirect_tab_fencei] | Y |
+| BPU 重定向 | Y[^redirect_tab_bpu] | | | |
+| `fence.i` | Y[^redirect_tab_fencei] | Y | Y[^redirect_tab_fencei] | Y |
 
 [^redirect_tab_bpu]: BPU 精确预测器（BPU s2/s3 给出结果）可能覆盖简单预测器（BPU s0 给出结果）的预测，显然其重定向请求最晚在预取请求的 1- 2 拍之后就到达 ICache，因此仅需要：
 
@@ -157,9 +157,111 @@ ITLB 的冲刷比较特殊，其缓存的页表项仅需要在执行 `sfence.vma
 
 因此，每当冲刷 IPrefetchPipe 的 s1 流水级时，无论冲刷原因为何，都需要同步冲刷 ITLB 的 `gpf` 缓存（即拉高 `ITLB.flushPipe`）。
 
-### ECC 校验
+### ECC
 
-TODO
+ICache 支持 ECC 功能（亦称 RAS[^ras] 或 RERI[^reri]），由 CtrlUnit 进行控制。目前除了基础的错误检测能力以外，主要实现了两个高级能力：错误自动恢复、错误注入。
+
+[^ras]: 此 RAS（Reliability, Availability, and Serviceability）非彼 RAS（Return Address Stack）。
+
+[^reri]: RERI（RAS Error-record Register Interface），参考 [RISC-V RERI 手册](https://github.com/riscv-non-isa/riscv-ras-eri)。
+
+#### 错误检测
+
+在 MissUnit 向 MetaArray 和 DataArray 重填数据时，会计算 meta 和 data 的校验码，前者和 meta 一起存储在 Meta SRAM 中，后者存储在单独的 Data Code SRAM 中。
+
+当取指请求读取 SRAM 时，会同步读取出校验码，在 MainPipe 的 s1/s2 流水级中分别对 meta/data 进行校验。软件可以通过向 CSR 中相应位置写入特定的值来使能/关闭这一功能，在 6-12 月的版本中为自定义 CSR `sfetchctl`，后续换成 mmio-mapped CSR，详见 [CtrlUnit 文档](./CtrlUnit.md)。
+
+在校验码设计方面，ICache 使用的校验码可由参数控制，默认使用的是 parity code，即校验码为对数据做规约异或 $code = \oplus data$。检查时只需将校验码和数据一起做规约异或 $error = (\oplus data) \oplus code$，结果为 1 则发生错误，反之**认为没有**错误（可能出现偶数个错误，但此处检查不出来）。
+
+在 [#4044](https://github.com/OpenXiangShan/XiangShan/pull/4044) 以后的版本中，ICache 支持错误注入，这要求 ICache 支持向 MetaArray/DataArray 写入错误的校验码。因此实现了一个`poison`位，当其拉高时，翻转写入的 code，即 $code = (\oplus data) \oplus poison$。
+
+为了减少检查不出的情况，目前将 data 划分成 DataCodeUnit（默认为 64bit）的单元分别进行奇偶校验，因此对每个 64B 的缓存行，总计会计算 $8(data) + 1(meta) = 9$ 个校验码。
+
+当 MainPipe 的 s1/s2 流水级检查到错误时，会进行以下处理：
+
+在 6 月至 11 月的版本中：
+
+1. 错误处理：引起 access fault 异常，由软件处理。
+2. 错误报告：向 BEU 报告错误，后者会引起中断向软件报告错误。
+3. 取消请求：当 MetaArray 被检查出错误时，其读出的 ptag 不可靠，进而对 hit 与否的判断不可靠，因此无论是否 hit 都不向 L2 Cache 发送请求，而是直接将异常传递到 IFU、进而传递到后端处理。
+
+在后续版本（[#3899](https://github.com/OpenXiangShan/XiangShan/pull/3899) 后）实现了错误自动恢复机制，故只需进行以下处理：
+
+1. 错误处理：从 L2 Cache 重新取指，见[下节](#错误自动恢复)。
+2. 错误报告：同上向 BEU 报告错误。
+
+#### 错误自动恢复
+
+注意到，ICache 与 DCache 不同，是只读的，因此其数据必然不是 dirty 的，这意味着我们总是可以从下级存储结构（L2/3 Cache、memory）中重新获取正确的数据。因此，ICache 可以通过向 L2 Cache 重新发起 miss 请求来实现错误自动恢复。
+
+实现重取功能本身只需要复用现有的 miss 取指路径，走 MainPipe -> MissUnit -> MSHR --tilelink-> L2 Cache 的请求路径。MissUnit 向 SRAM 重填数据时会自然地计算新的校验码并存储，因此在重取后会回到无错误的状态而不需要额外的处理。
+
+6-11 月和后续代码行为差异的伪代码示意如下：
+
+```diff
+- exception = itlb_exception || pmp_exception || ecc_error
++ exception = itlb_exception || pmp_exception
+
+- should_fetch = !hit && !exception
++ should_fetch = (!hit || ecc_error) && !exception
+```
+
+需要留意的是：为了避免重取后出现 multi-hit（即，同一个 set 内存在多个 way 的 ptag 相同），需要在重取前将 metaArray 对应位置的 valid 清空：
+
+- 若 MetaArray 错误：meta 保存的 ptag 本身可能出错，命中结果（one-hot 的 waymask）不可靠，“对应位置”指该 set 的所有 way
+- 若 DataArray 错误：命中结果可靠，“对应位置”指该 set 中 waymask 拉高的那一 way
+
+#### 错误注入
+
+根据 RERI 手册[^reri]的说明，为了使软件能够测试 ECC 功能，进而更好地判断硬件功能是否正常，需要提供错误注入功能，即主动地触发 ECC 错误。
+
+ICache 的错误注入功能由 CtrlUnit 控制，通过向 mmio-mapped CSR 中相应位置写入特定的值来触发。详见 [CtrlUnit 文档](./CtrlUnit.md)。
+
+目前 ICache 支持：
+
+- 向特定 paddr 注入，当请求注入的 paddr 未命中时，注入失败
+- 向 MetaArray 或 DataArray 注入
+- 当 ECC 校验功能本身未使能时，注入失败
+
+软件注入流程示意如下：
+
+```asm
+inject_target:
+  # maybe do something
+  ret
+
+test:
+  la t0, $BASE_ADDR     # 载入 mmio-mapped CSR 基地址
+  la t1, inject_target  # 载入注入目标地址
+  jalr ra, 0(t1)        # 跳转到注入目标以保证其加载到 ICache
+  sd t1, 8(t0)          # 向 CSR 写入注入目标地址
+  la t2, ($TARGET << 2 | 1 << 1 | 1 << 0)  # 设置注入目标、注入使能、校验使能
+  sd t1, 0(t0)          # 向 CSR 写入注入请求
+loop:
+  ld t1, 0(t0)          # 读取 CSR
+  andi t1, t1, (0b11 << (4+1)) # 读取注入状态
+  beqz t1, loop         # 如果注入未完成，继续等待
+
+  addi t1, t1, -1
+  bnez t1, error        # 如果注入失败，跳转到错误处理
+
+  jalr ra, 0(t1)        # 注入成功，跳转到注入目标地址以触发错误
+  j    finish           # 结束
+
+error:
+  # handle error
+finish:
+  # finish
+```
+
+我们编写了一个测试用例，见[此仓库](https://github.com/OpenXiangShan/nexus-am/pull/48)，其测试了如下情况：
+
+1. 正常注入 MetaArray
+2. 正常注入 DataArray
+3. 注入无效的目标
+4. 注入但 ECC 校验未使能
+5. 注入未命中的地址
+6. 尝试写入只读的 CSR 域
 
 ## 参考文献
 
