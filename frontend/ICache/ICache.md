@@ -90,10 +90,10 @@ DataArray 中的 cacheline 默认分为 8 个 bank 存储，每个 bank 中存�
 
 ### DataArray 分 bank 的低功耗设计
 
-目前，ICache 中每个 cacheline 分为 8 个 bank，bank0~7。一个取指块需要 34B 指令数据，故一次访问连续的 5 个 bank。存在两种情况：
+目前，ICache 中每个 cacheline 分为 8 个 bank，bank0-7。一个取指块需要 34B 指令数据，故一次访问连续的 5 个 bank。存在两种情况：
 
-1. 这 5 个 bank 位于单个 cacheline 中（起始地址位于 bank0~3）。假设起始地址位于 bank2，则所需数据位于 bank2~6。如下图 a。
-2. 跨 cacheline（起始地址位于 bank4~7）。假设起始地址位于 bank6，则数据位于 cacheline0 的 bank6~7、cacheline1 的 bank0~2。有些类似于环形缓冲区。如下图 b。
+1. 这 5 个 bank 位于单个 cacheline 中（起始地址位于 bank0-3）。假设起始地址位于 bank2，则所需数据位于 bank2-6。如下图 a。
+2. 跨 cacheline（起始地址位于 bank4-7）。假设起始地址位于 bank6，则数据位于 cacheline0 的 bank6-7、cacheline1 的 bank0-2。有些类似于环形缓冲区。如下图 b。
 
 ![DataArray 分 bank 示意图](../figure/ICache/ICache/dataarray_bank.png)
 
@@ -132,7 +132,7 @@ DataArray 中的 cacheline 默认分为 8 个 bank 存储，每个 bank 中存�
 | BPU 重定向\* | Y | | | |
 | `fence.i` | Y | Y | Y | Y |
 
-\* BPU 精确预测器（BPU s2/s3 给出结果）可能覆盖简单预测器（BPU s0 给出结果）的预测，显然其重定向请求最晚在预取请求       的1/       2拍之后就到达 ICache，因此仅需要：
+\* BPU 精确预测器（BPU s2/s3 给出结果）可能覆盖简单预测器（BPU s0 给出结果）的预测，显然其重定向请求最晚在预取请求  的1- 2拍之后就到达 ICache，因此仅需要：
 
 - BPU s2 redirect：冲刷 IPrefetchPipe s0
 - BPU s3 redirect：冲刷 IPrefetchPipe s0/1
