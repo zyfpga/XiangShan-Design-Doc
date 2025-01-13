@@ -1,0 +1,46 @@
+site_name: 香山开源处理器设计文档
+theme:
+  name: material
+  features:
+    - navigation.indexes
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - footnotes
+  - abbr
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
+  - def_list
+  - markdown_grid_tables
+  - markdown_captions     # for image caption, use alt as caption
+  - table_captions:       # for table caption, use Table: xxxx
+      numbering: false
+  - remove_references
+  - remove_include
+  - replace_variables:
+      variables:
+        processor_name: "昆明湖 V2R2"
+
+plugins:
+
+
+nav:
+  - 前端:
+    - 取指目标队列: frontend/FTQ/FTQ.md
+    - 取指令单元:
+      - 整体设计: frontend/IFU/IFU.md
+      - 预译码器: frontend/IFU/PreDecoder.md
+    - 指令缓存:
+      - 整体设计: frontend/ICache/ICache.md
+      - MainPipe: frontend/ICache/MainPipe.md
+      - IPrefetchPipe: frontend/ICache/IPrefetchPipe.md
+      - WayLookup: frontend/ICache/WayLookup.md
+      - MissUnit: frontend/ICache/MissUnit.md
+      - Replacer: frontend/ICache/Replacer.md
+      - CtrlUnit: frontend/ICache/CtrlUnit.md
