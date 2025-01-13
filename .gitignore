@@ -1,0 +1,10 @@
+build/
+site/
+venv/
+*.aux
+*.log
+*.pdf
+*.toc
+*.tex
+*.html
+
