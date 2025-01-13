@@ -5,8 +5,6 @@ VERSION = $(shell git describe --always)
 MAIN_MD = pandoc-main.md
 SRCS = $(shell find docs -name '*.md')
 
-$(info $(SRCS))
-
 SVG_FIGS := $(wildcard docs/figs/*.svg)
 PDF_FIGS := $(patsubst docs/figs/%.svg, build/docs/figs/%.pdf, $(SVG_FIGS))
 
