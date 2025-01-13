@@ -1,10 +1,8 @@
-# XiangShan ICache 设计文档
-
-## CtrlUnit 子模块文档
+# CtrlUnit 子模块文档
 
 目前 CtrlUnit 主要负责 ECC 校验使能/错误注入等功能
 
-### mmio-mapped CSR
+## mmio-mapped CSR
 
 CtrlUnit 内实现了一组 mmio-mapped CSR，连接在 tilelink 总线上，地址可由参数 `cacheCtrlAddressOpt` 配置，默认地址为`0x38022080`。总大小为 128B。
 
@@ -29,11 +27,11 @@ CtrlUnit 内实现了一组 mmio-mapped CSR，连接在 tilelink 总线上，地
 | eccctrl | ierror | ECC 错误原因（read-only）<br>0: ECC 未使能 (i.e. `!eccctrl.enable`)  <br>1: inject 目标 SRAM 无效 (i.e. `eccctrl.itarget==rsvd`)  <br>2: inject 目标地址 (i.e. `ecciaddr.paddr`) 不在 ICache 中<br>3: rsvd  <br>4: rsvd  <br>5: rsvd  <br>6: rsvd  <br>7: rsvd |
 | ecciaddr | paddr | ECC 错误注入物理地址 |
 
-### 错误校验使能
+## 错误校验使能
 
 CtrlUnit 的 `eccctrl.enable` 位直接连接到 MainPipe，控制 ECC 校验使能。当该位为 0 时，ICache 不会进行 ECC 校验。但仍会在重填时计算校验码并存储，这可能会有少量的额外功耗；如果不计算，则在未使能转换成使能时需要冲刷 ICache（否则读出的 parity code 可能是错的）。
 
-### 错误注入使能
+## 错误注入使能
 
 CtrlUnit 内部使用一个状态机控制错误注入过程，其 status （注意：与 `eccctrl.istatus` 不同）有：
 
