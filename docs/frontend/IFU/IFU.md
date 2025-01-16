@@ -7,28 +7,28 @@
 
 ## 术语说明
 
-| 缩写         | 全称                                     | 描述                                    |
-| ------------ | ---------------------------------------- | --------------------------------------- |
-| CRU          | Clock Reset Unit                         | 时钟复位单元                            |
+| 缩写         | 全称                                     | 描述                                       |
+| ------------ | ---------------------------------------- | ------------------------------------------ |
+| CRU          | Clock Reset Unit                         | 时钟复位单元                               |
 | RVC          | RISC-V Compressed Instructions           | RISC-V 手册"C"扩展规定的 16 位长度压缩指令 |
 | RVI          | RISC-V Integer Instructions              | RISC-V 手册规定的 32 位基本整型指令        |
-| IFU          | Instruction Fetch Unit                   | 取指令单元                              |
-| FTQ          | Fetch Target Queue                       | 取指目标队列                            |
-| PreDecode    | Predecoder Module                        | 预译码器                                |
-| PredChecker  | Prediction Check Module                  | 分支预测结果检查器                      |
-| ICache       | L1 Instruction Cache                     | 一级指令缓存                            |
-| IBuffer      | Instruction Buffer                       | 指令缓冲                                |
-| CFI          | Control Flow Instruction                 | 控制流指令                              |
-| PC           | Program Counter                          | 程序计数器                              |
-| ITLB         | Instruction Translation Lookaside Buffer | 指令地址转译后备缓冲器                  |
-| InstrUncache | Instruction Ucache Module                | 指令 MMIO 取指处理单元                        |
+| IFU          | Instruction Fetch Unit                   | 取指令单元                                 |
+| FTQ          | Fetch Target Queue                       | 取指目标队列                               |
+| PreDecode    | Predecoder Module                        | 预译码器                                   |
+| PredChecker  | Prediction Check Module                  | 分支预测结果检查器                         |
+| ICache       | L1 Instruction Cache                     | 一级指令缓存                               |
+| IBuffer      | Instruction Buffer                       | 指令缓冲                                   |
+| CFI          | Control Flow Instruction                 | 控制流指令                                 |
+| PC           | Program Counter                          | 程序计数器                                 |
+| ITLB         | Instruction Translation Lookaside Buffer | 指令地址转译后备缓冲器                     |
+| InstrUncache | Instruction Ucache Module                | 指令 MMIO 取指处理单元                     |
 
 ## 子模块列表
 
-| 子模块 | 描述 |
-| --- | --- |
-| [PreDecoder](PreDecoder.md) | 预译码模块 |
-| InstrUncache | 指令 MMIO 取指处理单元 |
+| 子模块                      | 描述                   |
+| --------------------------- | ---------------------- |
+| [PreDecoder](PreDecoder.md) | 预译码模块             |
+| InstrUncache                | 指令 MMIO 取指处理单元 |
 
 ## 功能描述
 
@@ -57,8 +57,8 @@ PreDecode 模块接受 F2 切分后的 17 个 2 字节初始指令码，一方�
 表 1.2 CFI 指令类型编码
 
 | CFI 指令类型 | 类型编码（ brType ） |
-| ----------- | -------------------- |
-| 非 CFI 指令   | 00                   |
+| ------------ | -------------------- |
+| 非 CFI 指令  | 00                   |
 | branch 指令  | 01                   |
 | jal 指令     | 10                   |
 | jalr 指令    | 11                   |
@@ -130,9 +130,11 @@ F3 流水级最终得到经过扩展的 32 位指令码，以及 16 条指令中
 
 ## 总体设计
 
-### 整体框图
+### 整体框图和流水级
 
 ![IFU模块整体框图](../figure/IFU/IFU/structure.png)
+
+![IFU模块流水级](../figure/IFU/IFU/stages.svg)
 
 ### 接口时序
 

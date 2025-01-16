@@ -55,3 +55,32 @@ ITTAGE 表项中包含一个 usefulness 域，当 provider 预测正确而 altpr
 注：ITTAGE 的清零 usefulness 域的饱和计数器名字是 tickCtr，长度为 8 比特，名字和长度均与 TAGE 不同。
 
 最后，在初始化时/TAGE 表分配新项时，所有的表项中的 ctr 计数器均被设置为 0，所有的 usefulness 域均被设置为 0。
+
+## 存储结构
+
+* 5 张历史表，项数分别为 256、256、512、512、512，每张表根据 pc 低位分了共 2 个 bank，每个 bank 有 128 个 set，每个 set 对应一个 FTB 项的最多 1 条间接跳转。
+* 每个表项含有 1bit valid，9bit tag，2bit ctr，39bit target，1bit useful；其中 useful bit 独立存储，valid 使用寄存器堆独立存储
+* 以 FTB 结果作为 base table，等效于 2K 项（但 FTB target 位宽不够，无法有效存储远跳转地址）
+* 历史表每个 bank 有 4 项的写缓存 wrbypass
+
+## 索引方式
+
+* index = pc[8:1] ^ folded_hist(8bit) 或 pc 和 folded_hist 各 9bit
+* tag = pc[17:9]（或 pc[19:10]） ^ folded_hist(9bit) ^ (folded_hist(8bit) << 1)
+  * 此处大概还是应该用 pc 低位比较好，而不是用 index 没用过的另一段 pc，或者
+* 历史采取基本的分段异或折叠
+
+## 预测流程
+
+* s0 进行索引计算，地址送入 SRAM
+* s1 读出表项，进行 bank 选取，以及判断是否命中，结果寄存到 s2
+* s2 计算最长历史匹配和次长历史匹配：
+  * 当存在历史表命中，且 ctr!=0 的时候，尝试使用最长历史结果目标地址
+  * 当 provider 信心不足（ctr==0）时，若次长历史命中，尝试使用次长历史结果目标地址
+  * 当没有历史表命中的时候，使用 FTB 结果
+  * 尝试使用历史表的结果时，只有 ctr>1 才会真正使用，若 ctr<=1，则不使用结果
+* s3 使用目标地址，在 BPU 内和 s2 结果进行比对，判断是否需要冲刷流水线
+
+## 训练流程
+
+基本和 TAGE 相同，对于 target 字段，仅当分配新表项或者原 ctr 为最小值 0 时，才会替换新值，否则保持原样
