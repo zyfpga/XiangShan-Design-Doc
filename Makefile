@@ -5,8 +5,8 @@ VERSION = $(shell git describe --always)
 MAIN_MD = pandoc-main.md
 SRCS = $(shell find docs -name '*.md')
 
-SVG_FIGS := $(wildcard docs/figs/*.svg)
-PDF_FIGS := $(patsubst docs/figs/%.svg, build/docs/figs/%.pdf, $(SVG_FIGS))
+SVG_FIGS := $(shell find docs -name '*.svg')
+PDF_FIGS := $(patsubst %.svg,build/%.pdf,$(SVG_FIGS))
 
 DEPS =
 DEPS += $(wildcard utils/*.lua)
@@ -36,8 +36,8 @@ clean:
 	rm -f $(DOC).tex $(DOC).pdf *.aux *.log *.toc
 	rm -rf build
 
-build/docs/figs/%.pdf: docs/figs/%.svg
-	mkdir -p build/docs/figs
+build/docs/%.pdf: docs/%.svg
+	mkdir -p $(dir $@)
 	rsvg-convert -f pdf -o $@ $<
 
 $(DOC).tex: $(MAIN_MD) $(SRCS) $(DEPS)
