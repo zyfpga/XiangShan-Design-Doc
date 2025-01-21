@@ -36,6 +36,9 @@ clean:
 	rm -f $(DOC).tex $(DOC).pdf *.aux *.log *.toc
 	rm -rf build
 
+init:
+	git submodule update --init
+
 build/docs/%.pdf: docs/%.svg
 	mkdir -p $(dir $@)
 	rsvg-convert -f pdf -o $@ $<
