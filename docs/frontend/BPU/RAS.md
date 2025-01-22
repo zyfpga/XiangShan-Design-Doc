@@ -112,7 +112,7 @@ RAS 预测器利用分支预测 FTB 块中的 call/return 指令局部的配对�
 
 推测栈判不为空的逻辑是``（BOS<=TOSR<TOSW）``，反之推测栈为空。（解释一下，推测栈弹栈时 TOSR 是向 BOS 逼近的。因此 TOSR 不在推测栈内，就说明推测栈为空。推测栈的数据去那了呢？在提交栈中，这与 BOS 的更新逻辑有关，前提是推测栈不能溢出。）
 
-![RAS栈顶](../figure/BPU/RAS/stack_top.svg)
+![RAS栈顶](../figure/BPU/RAS/stack_top.png)
 
 ## 出栈 Pop 和压栈 Push
 
