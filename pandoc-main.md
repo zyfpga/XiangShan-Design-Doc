@@ -31,4 +31,5 @@ docs/index.md
 docs/frontend/.index.md
 docs/backend/.index.md
 docs/memblock/.index.md
+docs/cache/.index.md
 ```
