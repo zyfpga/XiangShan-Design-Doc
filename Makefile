@@ -2,6 +2,7 @@ DOC = xiangshan-design-doc
 
 VERSION = $(shell git describe --always)
 
+PREFACE_MD = docs/index.md
 MAIN_MD = pandoc-main.md
 SRCS = $(shell find docs -name '*.md')
 
@@ -26,6 +27,7 @@ PANDOC_LATEX_FLAGS += --top-level-division=part
 PANDOC_LATEX_FLAGS += --pdf-engine=xelatex
 PANDOC_LATEX_FLAGS += --lua-filter=utils/pandoc_filters/svg_to_pdf.lua
 PANDOC_LATEX_FLAGS += --template=utils/template.tex
+PANDOC_LATEX_FLAGS += --include-before-body=preface.tex
 
 PANDOC_HTML_FLAGS += --embed-resources
 PANDOC_HTML_FLAGS += --shift-heading-level-by=1
@@ -43,7 +45,11 @@ build/docs/%.pdf: docs/%.svg
 	mkdir -p $(dir $@)
 	rsvg-convert -f pdf -o $@ $<
 
-$(DOC).tex: $(MAIN_MD) $(SRCS) $(DEPS)
+preface.tex: $(PREFACE_MD)
+	pandoc $< $(PANDOC_FLAGS) -o $@
+	sed -i 's/@{}//g' $@
+
+$(DOC).tex: preface.tex $(MAIN_MD) $(SRCS) $(DEPS)
 	pandoc $(MAIN_MD) $(PANDOC_FLAGS) $(PANDOC_LATEX_FLAGS) -s -o $@
 	sed -i 's/@{}//g' $@
 
@@ -51,8 +57,8 @@ $(DOC).html: $(MAIN_MD) $(SRCS) $(DEPS) $(SVG_FIGS)
 	pandoc -s $(MAIN_MD) $(PANDOC_FLAGS) $(PANDOC_HTML_FLAGS) -o $@
 
 $(DOC).pdf: $(DOC).tex $(PDF_FIGS)
-	xelatex $^
-	xelatex $^
-	xelatex $^
+	xelatex $<
+	xelatex $<
+	xelatex $<
 
 .PHONY: all clean
