@@ -27,8 +27,5 @@ i18n-applicable: "适用于"
 
 
 ``` {.include}
-docs/frontend/.index.md
-docs/backend/.index.md
-docs/memblock/.index.md
-docs/cache/.index.md
+docs/.index.md
 ```
