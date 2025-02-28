@@ -19,6 +19,7 @@ eqnPrefix: "公式"
 tblPrefix: "表"
 lstPrefix: "代码"
 secPrefix: "§"
+linkReferences: true
 i18n-applicable: "适用于"
 # i18n-applicable: "Applicable to"
 list-of-figures: true
