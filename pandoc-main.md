@@ -22,8 +22,8 @@ secPrefix: "§"
 linkReferences: true
 i18n-applicable: "适用于"
 # i18n-applicable: "Applicable to"
-list-of-figures: true
-list-of-tables: true
+lof: true
+lot: true
 break-after-section: true
 ---
 
