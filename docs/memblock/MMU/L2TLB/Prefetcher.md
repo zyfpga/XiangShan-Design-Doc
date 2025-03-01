@@ -26,9 +26,9 @@ Prefetcher 采用 Next-Line 预取算法，预取结果会保存在 Page Cache �
 
 ## 整体框图
 
-Prefetcher 的整体框图如图 5.3.9 所示。当 Page Cache 发生 miss 或 Page Cache hit，但命中的是预取项时，会产生预取请求。通过 Filter Buffer 可以过滤重复的预取请求。
+Prefetcher 的整体框图如 [@fig:MMU-prefetcher-overall] 所示。当 Page Cache 发生 miss 或 Page Cache hit，但命中的是预取项时，会产生预取请求。通过 Filter Buffer 可以过滤重复的预取请求。
 
-![Prefetcher 的整体框图](../figure/image44.png)
+![Prefetcher 的整体框图](../figure/image44.png){#fig:MMU-prefetcher-overall}
 
 ## 接口时序
 

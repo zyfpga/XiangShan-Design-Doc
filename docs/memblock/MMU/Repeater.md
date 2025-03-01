@@ -43,11 +43,11 @@ Dtlbrepeater 处理会得到两种结果，返回 MSHRid 或 full 信号。在 d
 
 ## 整体框图
 
-Repeater 的整体框图如图 5.2.2 所述，三个 itlbRepeater 和一个 dtlbRepeater，起到在 L1 TLB 与 L2 TLB 之间加拍的效果，两级 Repeater 之间通过 valid-ready 信号进行交互。Repeater 向上接受 ITLB 和 DTLB 的 PTW 请求，ITLB 和 DTLB 均为非阻塞式访问，因此这些 repeater 也均为阻塞式 Repeater。Repeater 向下向将 L1 TLB 的 PTW 请求发送给 L2 TLB。dtlbRepeater 和 itlbRepeater1 是 Filter 模块，可以合并 L1 TLB 中重复的请求。
+Repeater 的整体框图如 [@fig:MMU-repeater-overall] 所述，三个 itlbRepeater 和一个 dtlbRepeater，起到在 L1 TLB 与 L2 TLB 之间加拍的效果，两级 Repeater 之间通过 valid-ready 信号进行交互。Repeater 向上接受 ITLB 和 DTLB 的 PTW 请求，ITLB 和 DTLB 均为非阻塞式访问，因此这些 repeater 也均为阻塞式 Repeater。Repeater 向下向将 L1 TLB 的 PTW 请求发送给 L2 TLB。dtlbRepeater 和 itlbRepeater1 是 Filter 模块，可以合并 L1 TLB 中重复的请求。
 
 除 itlbRepeater1 之外，剩下两级 itlbRepeater 的本质只是单纯的加拍。加拍的多少要根据物理距离决定。在香山的昆明湖架构中，L2 TLB 位于 Memblock 中，和 ITLB 所在的 Frontend 模块物理距离较远，因此选择在 Frontend 中增加两级 repeater，Memblock 中增加一级 Repeater。而 DTLB 位于 Memblock 中，和 L2 TLB 之间的距离较近，只需要一级 Repeater 即可满足时序的要求。
 
-![Repeater 模块整体框图](./figure/image29.png)
+![Repeater 模块整体框图](./figure/image29.png){#fig:MMU-repeater-overall}
 
 ## 接口列表
 
@@ -57,23 +57,17 @@ Repeater 的整体框图如图 5.2.2 所述，三个 itlbRepeater 和一个 dtlb
 
 ### Repeater1 与 L1 TLB 的接口时序
 
-#### itlbRepeater1 与 ITLB 的接口时序
-
-参见 5.1.5.3 节：ITLB 与 itlbRepeater 的接口时序
-
-#### dtlbRepeater1 与 DTLB 的接口时序
-
-参见 5.1.5.3 节：DTLB 与 dtlbRepeater 的接口时序
+参见 [@sec:L1TLB-tlbRepeater-time] [TLB 与 tlbRepeater 的接口时序](./L1TLB.md#sec:L1TLB-tlbRepeater-time)。
 
 ### itlbRepeater3 及 dtlbRepeater1 与 L2 TLB 的接口时序
 
-itlbRepeater3 及 dtlbRepeater1 与 L2 TLB 的接口时序如图 5.2.3 所示。两者之间通过 valid-ready 信号进行握手，Repeater 将 L1 TLB 发出的 PTW 请求以及请求的虚拟地址发送给 L2 TLB；L2 TLB 查询得到结果后将物理地址以及对应的页表返回给 Repeater。
+itlbRepeater3 及 dtlbRepeater1 与 L2 TLB 的接口时序如 [@fig:MMU-tlbrepeater-time-L2TLB] 所示。两者之间通过 valid-ready 信号进行握手，Repeater 将 L1 TLB 发出的 PTW 请求以及请求的虚拟地址发送给 L2 TLB；L2 TLB 查询得到结果后将物理地址以及对应的页表返回给 Repeater。
 
-![itlbRepeater3 及 dtlbRepeater1 与 L2 TLB 的接口时序](./figure/image31.svg)
+![itlbRepeater3 及 dtlbRepeater1 与 L2 TLB 的接口时序](./figure/image31.svg){#fig:MMU-tlbrepeater-time-L2TLB}
 
 ### 多级 itlbrepeater 之间的接口时序
 
-多级 itlbrepeater 之间的接口时序如图 5.2.4 所示。两级 Repeater 之间通过 valid-ready 信号进行握手。
+多级 itlbrepeater 之间的接口时序如 [@fig:MMU-multi-itlbrepeater-time] 所示。两级 Repeater 之间通过 valid-ready 信号进行握手。
 
-![多级 itlbrepeater 之间的接口时序](./figure/image33.svg)
+![多级 itlbrepeater 之间的接口时序](./figure/image33.svg){#fig:MMU-multi-itlbrepeater-time}
 

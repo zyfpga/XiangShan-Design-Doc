@@ -40,9 +40,9 @@ Page Table Walker 中可能出现 access fault 异常，会交付给 L1 TLB，L1
 
 Page Table Walker 的本质是一个 s/w 状态机分为请求和应答事件，每个状态用一对请求事件和应答事件表示，在此以常见的状态机的状态转移图以及转移关系来表示，方便理解。关于 Page Table Walker 与其他 L2 TLB 中模块的连接关系，参见 5.3.3 节。
 
-状态机的转移关系图如图 5.3.6 所示。
+状态机的转移关系图如 [@fig:PTW-states] 所示。
 
-![Page Table Walker 状态机的状态转移图](../figure/image40.jpeg)
+![Page Table Walker 状态机的状态转移图](../figure/image40.jpeg){#fig:PTW-states}
 
 为了清楚表现状态，将不同类型请求分成两种类型状态机分别画出转移图。
 

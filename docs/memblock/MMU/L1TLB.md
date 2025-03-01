@@ -26,16 +26,16 @@
 
 在核内进行内存读写，包括前端取指和后端访存前，都需要由 L1 TLB 进行地址翻译。因物理距离较远，并且为了避免相互污染，分为前端取指的 ITLB（Instruction TLB）和后端访存的 DTLB（Data TLB）。ITLB 采用全相联模式，48 项全相联保存全部大小页。ITLB 接收来自 Frontend 的地址翻译请求，itlb_requestors(0) 至 itlb_requestors(2) 来自 icache，其中 itlb_requestors(2) 为 icache 的预取请求；itlb_requestors(3) 来自 ifu，为 MMIO 指令的地址翻译请求。
 
-ITLB 的项配置和请求来源分别如表 5.1.1、表 5.1.2。
+ITLB 的项配置和请求来源分别如 [@tbl:ITLB-config;@tbl:ITLB-request-source]。
 
-Table: ITLB 的项配置
+Table: ITLB 的项配置 {#tbl:ITLB-config}
 
 | **项名** | **项数** | **组织结构** | **替换算法** | **存储内容** |
 |:--------:|:--------:|:------------:|:------------:|:------------:|
 |   Page   |    48    |    全相联    |     PLRU     |  全部大小页  |
 
 
-Table: ITLB 的请求来源
+Table: ITLB 的请求来源 {#tbl:ITLB-request-source}
 
 |   **序号**    |       **来源**       |
 |:-------------:|:--------------------:|
@@ -48,16 +48,16 @@ Table: ITLB 的请求来源
 
 DTLB 采用全相联模式，48 项全相联保存全部大小页。DTLB 接收来自 MemBlock 的地址翻译请求，dtlb_ld 接收来自 loadUnits 和 L1 Load stream & stride 预取器的请求，负责 Load 指令的地址翻译；dtlb_st 接收 StoreUnits 的请求，负责 Store 指令的地址翻译。特别地，对于 AMO 指令，会使用 loadUnit(0) 的 dtlb_ld_requestor，向 dtlb_ld 发送请求。SMSPrefetcher 会向单独的 DTLB 发送预取请求。
 
-DTLB 的项配置和请求来源分别如表 5.1.3、表 5.1.4。
+DTLB 的项配置和请求来源分别如 [@tbl:DTLB-config;@tbl:DTLB-request-source]。
 
-Table: DTLB 的项配置
+Table: DTLB 的项配置 {#tbl:DTLB-config}
 
 | **项名** | **项数** | **组织结构** | **替换算法** | **存储内容** |
 |:--------:|:--------:|:------------:|:------------:|:------------:|
 |   Page   |    48    |    全相联    |     PLRU     |  全部大小页  |
 
 
-Table: DTLB 的请求来源
+Table: DTLB 的请求来源 {#tbl:DTLB-request-source}
 
 | **模块** |     **序号**     |             **来源**             |
 |:--------:|:----------------:|:--------------------------------:|
@@ -79,9 +79,9 @@ L1 TLB 采用可配置的替换策略，默认为 PLRU 替换算法。在南湖�
 
 请注意，昆明湖架构对上述问题提出优化，在满足时序的条件下，将 ITLB 和 DTLB 统一设置为 48 项全相联结构，任意大小的页都可以回填，ITLB 和 DTLB 均采用 PLRU 替换策略。
 
-ITLB 和 DTLB 的回填策略如表 5.1.5 所示。
+ITLB 和 DTLB 的回填策略如 [@tbl:L1TLB-refill-policy] 所示。
 
-Table: ITLB 和 DTLB 的回填策略
+Table: ITLB 和 DTLB 的回填策略 {#tbl:L1TLB-refill-policy}
 
 | **模块** | **项名** |             **策略**             |
 |:--------:|:--------:|:--------------------------------:|
@@ -116,11 +116,7 @@ Table: ITLB 和 DTLB 的回填策略
 
 ### 支持在 L1 TLB 内部判断虚存是否开启以及两个阶段翻译是否开启
 
-香山支持 RISC-V 手册中的 Sv39 页表，虚拟地址长度为 39 位。香山的物理地址为 36 位，可参数化修改。虚拟地址和物理地址的结构如图 5.1.1、图 5.1.2 所示。
-
-![香山处理器的虚拟地址结构](figure/image1.png)
-
-![香山处理器的物理地址结构](figure/image2.png)
+香山支持 RISC-V 手册中的 Sv39 页表，虚拟地址长度为 39 位。香山的物理地址为 36 位，可参数化修改。
 
 虚存是否开启需要根据特权级和 SATP 寄存器的 MODE 域等共同决定，这一判断在 TLB 内部完成，对 TLB 外透明。关于特权级的描述，参见 5.1.2.7 节；关于 SATP 的 MODE 域，香山的昆明湖架构只支持 MODE 域为 8，也就是 Sv39 分页机制，否则会上报 illegal instruction fault。在 TLB 外的模块（Frontend、LoadUnit、StoreUnit、AtomicsUnit 等）看来，所有地址都经过了 TLB 的地址转换。
 
@@ -185,9 +181,9 @@ Table: TLB 压缩前后每项存储的内容
 
 ### 存储四种类型的 TLB 项
 
-在添加 H 拓展的 L1TLB 中对 TLB 项进行了修改，如图所示。
+在添加 H 拓展的 L1TLB 中对 TLB 项进行了修改，如 [@fig:L1TLB-item] 所示。
 
-![TLB 项示意图](figure/image19.png)
+![TLB 项示意图](figure/image19.png) {#fig:L1TLB-item}
 
 与原先的设计相比，新增了 g_perm、vmid、s2xlate，其中 g_perm 用来存储第二阶段页表的 perm，vmid 用来存储第二阶段页表的 vmid，s2xlate 用来区分 TLB 项的类型。根据 s2xlate 的不同，TLB 项目存储的内容也有所不同。
 
@@ -205,9 +201,9 @@ Table: TLB 项的类型
 
 ### TLB refill 将两个阶段的页表进行融合
 
-添加了 H 拓展后的 MMU，PTW 返回的结构分为三部分，第一部分 s1 是原先设计中的 PtwSectorResp，存储第一阶段翻译的页表，第二部分 s2 是 HptwResp，存储第二阶段翻译的页表，第三部分是 s2xlate，代表这次 resp 的类型，仍然分为 noS2xlate、allStage、onlyStage1 和 onlyStage2，如下图。其中 PtwSectorEntry 是采用了 TLB 压缩技术的 PtwEntry，两者的主要区别是 tag 和 ppn 的长度
+添加了 H 拓展后的 MMU，PTW 返回的结构分为三部分，第一部分 s1 是原先设计中的 PtwSectorResp，存储第一阶段翻译的页表，第二部分 s2 是 HptwResp，存储第二阶段翻译的页表，第三部分是 s2xlate，代表这次 resp 的类型，仍然分为 noS2xlate、allStage、onlyStage1 和 onlyStage2，如 [@fig:L1TLB-PTW-resp-struct]。其中 PtwSectorEntry 是采用了 TLB 压缩技术的 PtwEntry，两者的主要区别是 tag 和 ppn 的长度
 
-![PTW resp 结构示意图](figure/image20.png)
+![PTW resp 结构示意图](figure/image20.png) {#fig:L1TLB-PTW-resp-struct}
 
 对于 noS2xlate 和 onlyStage1 的情况，只需要将 s1 的结果填入 TLB 项中即可，写入方法与原先的设计类似，将返回的 s1 的对应字段填入 entry 的对应字段即可。需要注意的是，noS2xlate 的时候，vmid 字段无效。
 
@@ -248,21 +244,21 @@ Table: 获取 gpaddr 的新增 Reg
 
 ## 整体框图
 
-L1 TLB 的整体框图如图 5.1.6 所述，包括绿框中的 ITLB 和 DTLB。ITLB 接收来自 Frontend 的 PTW 请求，DTLB 接收来自 Memblock 的 PTW 请求。来自 Frontend 的 PTW 请求包括 ICache 的 3 个请求和 IFU 的 1 个请求，来自 Memblock 的 PTW 请求包括 LoadUnit 的 2 个请求（AtomicsUnit 占用 LoadUnit 的 1 个请求通道）、L1 Load Stream & Stride prefetch 的 1 个请求，StoreUnit 的 2 个请求，以及 SMSPrefetcher 的 1 个请求。
+L1 TLB 的整体框图如 [@fig:L1TLB-overall] 所述，包括绿框中的 ITLB 和 DTLB。ITLB 接收来自 Frontend 的 PTW 请求，DTLB 接收来自 Memblock 的 PTW 请求。来自 Frontend 的 PTW 请求包括 ICache 的 3 个请求和 IFU 的 1 个请求，来自 Memblock 的 PTW 请求包括 LoadUnit 的 2 个请求（AtomicsUnit 占用 LoadUnit 的 1 个请求通道）、L1 Load Stream & Stride prefetch 的 1 个请求，StoreUnit 的 2 个请求，以及 SMSPrefetcher 的 1 个请求。
 
 在 ITLB 和 DTLB 查询得到结果后，都需要进行 PMP 和 PMA 检查。由于 L1 TLB 的面积较小，因此 PMP 和 PMA 寄存器的备份并不存储在 L1 TLB 内部，而是存储在 Frontend 或 Memblock 中，分别为 ITLB 和 DTLB 提供检查。ITLB 和 DTLB 缺失后，需要经过 repeater 向 L2 TLB 发送查询请求。
 
-![L1 TLB 模块整体框图](figure/image21.png)
+![L1 TLB 模块整体框图](figure/image21.png){#fig:L1TLB-overall}
 
 ## 接口时序
 
-### ITLB 与 Frontend 的接口时序
+### ITLB 与 Frontend 的接口时序 {#sec:ITLB-time-frontend}
 
 #### Frontend 向 ITLB 发送的 PTW 请求命中 ITLB
 
-Frontend 向 ITLB 发送的 PTW 请求在 ITLB 命中时，时序图如图 5.1.7 所示。
+Frontend 向 ITLB 发送的 PTW 请求在 ITLB 命中时，时序图如 [@fig:ITLB-time-hit] 所示。
 
-![Frontend 向 ITLB 发送的 PTW 请求命中 ITLB 的时序图](figure/image11.svg)
+![Frontend 向 ITLB 发送的 PTW 请求命中 ITLB 的时序图](figure/image11.svg){#fig:ITLB-time-hit}
 
 当 Frontend 向 ITLB 发送的 PTW 请求在 ITLB 命中时，resp_miss 信号保持为 0。req_valid 为 1 后的下一个时钟上升沿，ITLB 会将 resp_valid 信号置 1，同时向 Frontend 返回虚拟地址转换后的物理地址，以及是否发生 guest page fault、page fault 和 access fault 等信息。时序描述如下：
 
@@ -271,9 +267,11 @@ Frontend 向 ITLB 发送的 PTW 请求在 ITLB 命中时，时序图如图 5.1.7
 
 #### Frontend 向 ITLB 发送的 PTW 请求未命中 ITLB
 
-Frontend 向 ITLB 发送的 PTW 请求在 ITLB 未命中时，时序图如图 5.1.8 所示。
+Frontend 向 ITLB 发送的 PTW 请求在 ITLB 未命中时，时序图如 [@fig:ITLB-time-miss] 所示。
 
-![Frontend 向 ITLB 发送的 PTW 请求命中 ITLB 的时序图](figure/image13.svg)
+![Frontend 向 ITLB 发送的 PTW 请求未命中 ITLB 的时序图](figure/image13.svg){#fig:ITLB-time-miss}
+
+当 Frontend 向 ITLB 发送的 PTW 请求在 ITLB 中未命中时，下一拍会向 ITLB 返回 resp_miss 信号，表示 ITLB 未命中。此时 ITLB 的该条 requestor 通道不再接收新的 PTW 请求，由 Frontend 重复发送该请求，直至查询得到 L2 TLB 或内存中的页表并返回。（请注意，"ITLB 的该条 requestor 通道不再接收新的 PTW 请求"由 Frontend 控制，也就是说，无论 Frontend 选择不重发 miss 的请求，或重发其他请求，Frontend 的行为对 TLB 来说是透明的。如果 Frontend 选择发送新请求，ITLB 会将旧请求直接丢失掉。）
 
 当 Frontend 向 ITLB 发送的 PTW 请求在 ITLB 中未命中时，下一拍会向 ITLB 返回 resp_miss 信号，表示 ITLB 未命中。此时 ITLB 的该条 requestor 通道不再接收新的 PTW 请求，由 Frontend 重复发送该请求，直至查询得到 L2 TLB 或内存中的页表并返回。（请注意，"ITLB 的该条 requestor 通道不再接收新的 PTW 请求"由 Frontend 控制，也就是说，无论 Frontend 选择不重发 miss 的请求，或重发其他请求，Frontend 的行为对 TLB 来说是透明的。如果 Frontend 选择发送新请求，ITLB 会将旧请求直接丢失掉。）
 
@@ -285,47 +283,46 @@ Frontend 向 ITLB 发送的 PTW 请求在 ITLB 未命中时，时序图如图 5.
 * 第 X+1 拍：ITLB 此时命中，resp_valid 为 1，resp_miss 为 0。ITLB 向 Frontend 返回物理地址以及是否发生 access fault、page fault 等信息。
 * 第 X+2 拍：ITLB 向 Frontend 返回的 resp_valid 信号置 0。
 
-### DTLB 与 Memblock 的接口时序
+### DTLB 与 Memblock 的接口时序 {#sec:DTLB-time-memblock}
 
 #### Memblock 向 DTLB 发送的 PTW 请求命中 DTLB
 
-Memblock 向 DTLB 发送的 PTW 请求在 DTLB 命中时，时序图如图 5.1.9 所示。
+Memblock 向 DTLB 发送的 PTW 请求在 DTLB 命中时，时序图如 [@fig:DTLB-time-hit] 所示。
 
-![Memblock 向 DTLB 发送的 PTW 请求命中 DTLB 的时序图](figure/image11.svg)
+![Memblock 向 DTLB 发送的 PTW 请求命中 DTLB 的时序图](figure/image11.svg){#fig:DTLB-time-hit}
 
 当 Memblock 向 DTLB 发送的 PTW 请求在 DTLB 命中时，resp_miss 信号保持为 0。req_valid 为 1 后的下一个时钟上升沿，DTLB 会将 resp_valid 信号置 1，同时向 Memblock 返回虚拟地址转换后的物理地址，以及是否发生 page fault 和 access fault 等信息。时序描述如下：
 
-第 0 拍：Memblock 向 DTLB 发送 PTW 请求，req_valid 置 1。
-
-第 1 拍：DTLB 向 Memblock 返回物理地址，resp_valid 置 1。
+* 第 0 拍：Memblock 向 DTLB 发送 PTW 请求，req_valid 置 1。
+* 第 1 拍：DTLB 向 Memblock 返回物理地址，resp_valid 置 1。
 
 #### Memblock 向 DTLB 发送的 PTW 请求未命中 DTLB
 
 DTLB 和 ITLB 相同，均为非阻塞式访问（即 TLB 内部并不包括阻塞逻辑，如果请求来源保持不变，即缺失后持续重发同一条请求，则呈现出类似阻塞式访问的效果；如果请求来源在收到缺失的反馈后，调度其他不同请求查询 TLB，则呈现出类似非阻塞式访问的效果）。和前端取指不同，当 Memblock 向 DTLB 发送的 PTW 请求未命中 DTLB，并不会阻塞流水线，DTLB 会在 req_valid 的下一拍向 Memblock 返回请求 miss 以及 resp_valid 的信号，在 Memblock 在收到 miss 信号后可以进行调度，继续查询其他请求。
 
-在 Memblock 访问 DTLB 发生 miss 后，DTLB 会向 L2 TLB 发送 PTW 请求，查询来自 L2 TLB 或内存中的页表。DTLB 通过 Filter 向 L2 TLB 传递请求，Filter 可以合并 DTLB 向 L2 TLB 发送的重复请求，保证 DTLB 中不出现重复项并提高 L2 TLB 的利用率。Memblock 向 DTLB 发送的 PTW 请求未命中 DTLB 的时序图如图 5.1.10 所示，该图只描述了从请求 miss 到 DTLB 向 L2 TLB 发送 PTW 请求的过程。
+在 Memblock 访问 DTLB 发生 miss 后，DTLB 会向 L2 TLB 发送 PTW 请求，查询来自 L2 TLB 或内存中的页表。DTLB 通过 Filter 向 L2 TLB 传递请求，Filter 可以合并 DTLB 向 L2 TLB 发送的重复请求，保证 DTLB 中不出现重复项并提高 L2 TLB 的利用率。Memblock 向 DTLB 发送的 PTW 请求未命中 DTLB 的时序图如 [@fig:DTLB-time-miss] 所示，该图只描述了从请求 miss 到 DTLB 向 L2 TLB 发送 PTW 请求的过程。
 
-![Memblock 向 DTLB 发送的 PTW 请求未命中 DTLB 的时序图](figure/image15.svg)
+![Memblock 向 DTLB 发送的 PTW 请求未命中 DTLB 的时序图](figure/image15.svg){#fig:DTLB-time-miss}
 
-在 DTLB 接收到 L2 TLB 的 PTW 回复后，将页表项存储在 DTLB 中。当 Memblock 再次访问 DTLB 时会发生 hit，情况与图 5.1.9 相同。DTLB 与 L2 TLB 交互的时序情况与图 5.1.8 的 ptw_req 和 ptw_resp 部分相同。
+在 DTLB 接收到 L2 TLB 的 PTW 回复后，将页表项存储在 DTLB 中。当 Memblock 再次访问 DTLB 时会发生 hit，情况与 [@fig:DTLB-time-hit] 相同。DTLB 与 L2 TLB 交互的时序情况与 [@fig:ITLB-time-miss] 的 ptw_req 和 ptw_resp 部分相同。
 
-### TLB 与 tlbRepeater 的接口时序
+### TLB 与 tlbRepeater 的接口时序 {#sec:L1TLB-tlbRepeater-time}
 
 #### TLB 向 tlbRepeater 发送 PTW 请求
 
-TLB 向 tlbRepeater 发送 PTW 请求的接口时序图如图 5.1.11 所示。
+TLB 向 tlbRepeater 发送 PTW 请求的接口时序图如 [@fig:L1TLB-time-ptw-req] 所示。
 
-![TLB 向 Repeater 发送 PTW 请求的时序图](figure/image23.svg)
+![TLB 向 Repeater 发送 PTW 请求的时序图](figure/image23.svg){#fig:L1TLB-time-ptw-req}
 
 昆明湖架构中，ITLB 和 DTLB 均采用非阻塞访问，在 TLB miss 时会向 L2 TLB 发送 PTW 请求，但并不会因为未接收到 PTW 回复而阻塞流水线和 TLB 与 Repeater 之间的 PTW 通道。TLB 可以不断向 tlbRepeater 发送 PTW 请求，tlbRepeater 会根据这些请求的虚拟页号，对重复的请求进行合并，避免 L2 TLB 的资源浪费以及 L1 TLB 的重复项。
 
-从图 5.1.11 的时序关系可以看出，在 tlb 向 Repeater 发送 PTW 请求后的下一拍，Repeater 会继续向下传递 PTW 请求。由于 Repeater 已经向 L2 TLB 发送过虚拟页号为 vpn1 的 PTW 请求，因此当 Repeater 再次接收到相同虚拟页号的 PTW 请求时，不会再传递给 L2 TLB。
+从 [@fig:L1TLB-time-ptw-req] 的时序关系可以看出，在 tlb 向 Repeater 发送 PTW 请求后的下一拍，Repeater 会继续向下传递 PTW 请求。由于 Repeater 已经向 L2 TLB 发送过虚拟页号为 vpn1 的 PTW 请求，因此当 Repeater 再次接收到相同虚拟页号的 PTW 请求时，不会再传递给 L2 TLB。
 
 #### itlbRepeater 向 ITLB 返回 PTW 回复
 
-itlbRepeater 向 ITLB 返回 PTW 回复的接口时序图参见图 5.1.12。
+itlbRepeater 向 ITLB 返回 PTW 回复的接口时序图参见 [@fig:ITLB-time-ptw-resp] 。
 
-![itlbRepeater 向 ITLB 返回 PTW 回复的时序图](figure/image25.svg)
+![itlbRepeater 向 ITLB 返回 PTW 回复的时序图](figure/image25.svg){#fig:ITLB-time-ptw-resp}
 
 时序描述如下：
 
@@ -334,9 +331,9 @@ itlbRepeater 向 ITLB 返回 PTW 回复的接口时序图参见图 5.1.12。
 
 #### dtlbRepeater 向 DTLB 返回 PTW 回复
 
-dtlbRepeater 向 DTLB 返回 PTW 回复的接口时序图参见图 5.1.13。
+dtlbRepeater 向 DTLB 返回 PTW 回复的接口时序图参见 [@fig:DTLB-time-ptw-resp] 。
 
-![dtlbRepeater 向 DTLB 返回 PTW 回复的时序图](figure/image27.svg)
+![dtlbRepeater 向 DTLB 返回 PTW 回复的时序图](figure/image27.svg){#fig:DTLB-time-ptw-resp}
 
 时序描述如下：
 

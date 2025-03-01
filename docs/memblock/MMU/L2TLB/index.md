@@ -42,9 +42,9 @@ L2 TLB 通过 TileLink 总线向 L2 Cache 发送 PTW 请求，和 L2 Cache 之�
 
 由于 L2 TLB 模块较大，例如 sfence 信号、csr 寄存器等需要驱动较多部分，因此需要将 sfence 信号、csr 寄存器复制多份。复制寄存器可以便于时序优化和物理实现，与功能实现无关，复制的内容完全相同。可以使用复制的信号和寄存器驱动不同位置的部件。
 
-复制情况以及分别驱动的部分如表 5.3.1 所示：
+复制情况以及分别驱动的部分如 [@tbl:L2TLB-signal-replication-drive] 所示：
 
-Table: 信号复制情况以及驱动部件
+Table: 信号复制情况以及驱动部件 {#tbl:L2TLB-signal-replication-drive}
 
 | **复制信号** |   **序号**    |         **驱动部件**         |
 |:------------:|:-------------:|:----------------------------:|
@@ -80,19 +80,19 @@ L2 TLB 每次访问内存的宽度为 512 bits，每次可以返回 8 项页表�
 
 在 Page Cache 缺失，通过 Page Table Walker 或 Last Level Page Table Walker 访问内存中的页表后，会将内存中的页表返回给 L1 TLB，同时回填入 Page Cache 中，如果需要第二阶段的地址翻译，在 Hypervisor Page Table Walker 中访问到的页表也会重填到 Page Cache，HPTW 会将最终的翻译结果返回给 PTW 或者 LLPTW，PTW 或 LLPTW 会把两阶段的页表都返回给 L1TLB。非两阶段翻译请求在返回至 L1 TLB 时，同样可以将连续的 8 项页表进行压缩。由于 Page Table Walker 只有在访问到叶子节点时才会直接返回给 L1 TLB，因此 Page Table Walker 返回给 L1 TLB 的页表均为大页。由于大页对性能的影响很小，考虑到优化方案的实现简单性，以及复用 Page Cache 中 sp 项的数据通路，Page Table Walker 返回的大页并不会压缩。
 
-L2 TLB 只对 4KB 页表进行压缩，根据 RISC-V 特权级手册中的 Sv39 分页机制，4KB 页表所在物理地址的低 3 位即为虚拟页号的低 3 位。因此，Page Cache 或 Last Level Page Table Walker 返回的连续 8 项页表可以通过虚拟页号的低 3 位进行索引。其中，valid 位表示压缩后的页表项是否有效。根据 L1 TLB 发送的页表查找请求虚拟页号的低三位，索引到该虚拟页号对应的页表项，该页表项的 valid 一定为 1。对于和该页表项连续的其余 7 个页表项，通过比较它们的物理页号高位，以及页表属性位是否相同。如果物理页号高位以及页表属性位都和通过虚拟页号的低三位索引到的页表项相等，则 valid 位为 1，否则为 0。同时，L2 TLB 还会返回 pteidx，即表示这 8 项连续的页表中，哪一项才是 L1 TLB 发送 vpn 对应的页表。L2 TLB 压缩如图 5.3.1 所示。
+L2 TLB 只对 4KB 页表进行压缩，根据 RISC-V 特权级手册中的 Sv39 分页机制，4KB 页表所在物理地址的低 3 位即为虚拟页号的低 3 位。因此，Page Cache 或 Last Level Page Table Walker 返回的连续 8 项页表可以通过虚拟页号的低 3 位进行索引。其中，valid 位表示压缩后的页表项是否有效。根据 L1 TLB 发送的页表查找请求虚拟页号的低三位，索引到该虚拟页号对应的页表项，该页表项的 valid 一定为 1。对于和该页表项连续的其余 7 个页表项，通过比较它们的物理页号高位，以及页表属性位是否相同。如果物理页号高位以及页表属性位都和通过虚拟页号的低三位索引到的页表项相等，则 valid 位为 1，否则为 0。同时，L2 TLB 还会返回 pteidx，即表示这 8 项连续的页表中，哪一项才是 L1 TLB 发送 vpn 对应的页表。L2 TLB 压缩如 [@fig:L2TLB-compress-1;@fig:L2TLB-compress-2] 所示。
 
-![L2 TLB 压缩示意图 1](../figure/image34.png)
+![L2 TLB 压缩示意图 1](../figure/image34.png){#fig:L2TLB-compress-1}
 
-![L2 TLB 压缩示意图 2](../figure/image35.png)
+![L2 TLB 压缩示意图 2](../figure/image35.png){#fig:L2TLB-compress-2}
 
 实现 TLB 压缩后，L1 TLB 的每项都是一个压缩的 TLB 项，通过虚拟页号的高位查找。TLB 项命中的条件除虚拟页号高位相同外，还需要满足虚拟页号低位对应的 valid 位为 1，表示查找的页表项在压缩后的 TLB 项中有效。TLB 压缩和 L1 TLB 相关的部分详见 L1TLB 模块的介绍。
 
 ## 整体框图
 
-![L2 TLB 模块整体框图](../figure/image9.jpeg)
+![L2 TLB 模块整体框图](../figure/image9.jpeg){#fig:L2TLB-overall}
 
-如图 5.3.2 所示，L2 TLB 分为 Page Cache，Page Table Walker，Last Level Page Table Walker、Hypervisor Page Table Walker、Miss Queue 和 Prefetcher 六部分。
+如 [@fig:L2TLB-overall] 所示，L2 TLB 分为 Page Cache，Page Table Walker，Last Level Page Table Walker、Hypervisor Page Table Walker、Miss Queue 和 Prefetcher 六部分。
 
 来自 L1 TLB 的请求将首先访问 Page Cache，对于非两阶段地址翻译的请求，若命中叶子节点则直接返回给 L1 TLB，否则根据 Page Cache 命中的页表等级以及 Page Table Walker 和 Last Level Page Table Walker 的空闲情况进入 Page Table Walker、Last Level Page Table Walker 或 Miss Queue（参见 5.3.7 节）。而对于两阶段地址翻译请求，如果该请求是 onlyStage1 的，则处理方式与非两阶段地址翻译请求一致；如果该请求是 onlyStage2 的，命中叶子页表，则直接返回，没有命中，则发送给 Page Table Walker 进行翻译；如果该请求是 allStage 的，由于 Page Cache 一次只能查询一次页表，所以首先查询第一阶段页表，分两种情况，如果第一阶段页表命中，则发送给 Page Table Walker，由其进行接下来的翻译过程，如果第一阶段页表没有命中叶子节点，则根据命中页表等级以及 Page Table Walker 和 Last Level Page Table Walker 的空闲情况进入 Page Table Walker、Last Level Page Table Walker 或 Miss Queue。为了加快页表访问，Page Cache 将三级页表都分开做了缓存，可以同时查询三级页表（参见 5.3.7 节）。Page Cache 支持 ecc 校验，如果 ecc 校验出错，则刷新此项，并重新进行 Page Walk。
 
@@ -111,9 +111,9 @@ Miss Queue 接收来自 Page Cache 和 Last Level Page Table Walker 的请求，
 * mq_arb：2 to 1 的仲裁器，输入为 Page Cache 和 Last Level Page Table Walker；输出为 Miss Queue
 * mem_arb：3 to 1 的仲裁器，输入为 Page Table Walker、Last Level Page Table Walker 和 Last Level Page Table Walker；输出为 L2 Cache（Last Level Page Table Walker 内部也有一个 mem_arb，把所有 Last Level Page Table Walker 向 L2 Cache 发送的 PTW 项做仲裁，之后传到这个 mem_arb 里）
 
-![L2 TLB 模块 hit 通路](../figure/image36.jpeg)
+![L2 TLB 模块 hit 通路](../figure/image36.jpeg){#fig:L2TLB-hit-passthrough}
 
-L2 TLB 模块的 hit 通路如图 5.3.3 所示。来自 ITLB 和 DTLB 的请求会首先通过仲裁，之后送往 Page Cache 进行查询。对于非两阶段地址翻译、只有第二阶段翻译或者只有第一阶段翻译的请求，如果 Page Cache 命中，则直接将 Page Cache 命中的页表项以及物理地址等信息返回给 L1 TLB。对于 allStage，Page Cache 中首先查询第一阶段页表，第一阶段 hit，则会发送给 PTW，由 PTW 发送 hptw 请求，hptw 请求会进入 Page Cache 查询，如果 hit 则发送给 PTW，如果没有 hit，则发送给 HPTW，HPTW 查询结束后将结果发送给 PTW，HPTW 访存得到的页表也会回填到 Page Cache。对于 ITLB 和 DTLB 发送的所有 PTW 请求以及 PTW 或者 LLPTW 发送的 hptw 请求，一定会首先进行 Page Cache 的查询。
+L2 TLB 模块的 hit 通路如 [@fig:L2TLB-hit-passthrough] 所示。来自 ITLB 和 DTLB 的请求会首先通过仲裁，之后送往 Page Cache 进行查询。对于非两阶段地址翻译、只有第二阶段翻译或者只有第一阶段翻译的请求，如果 Page Cache 命中，则直接将 Page Cache 命中的页表项以及物理地址等信息返回给 L1 TLB。对于 allStage，Page Cache 中首先查询第一阶段页表，第一阶段 hit，则会发送给 PTW，由 PTW 发送 hptw 请求，hptw 请求会进入 Page Cache 查询，如果 hit 则发送给 PTW，如果没有 hit，则发送给 HPTW，HPTW 查询结束后将结果发送给 PTW，HPTW 访存得到的页表也会回填到 Page Cache。对于 ITLB 和 DTLB 发送的所有 PTW 请求以及 PTW 或者 LLPTW 发送的 hptw 请求，一定会首先进行 Page Cache 的查询。
 
 而对于 miss 的情况，所有模块均可能参与。来自 ITLB 和 DTLB 的请求会首先通过仲裁，之后送往 Page Cache 进行查询。如果 Page Cache 未命中，则可能分情况进入 MissQueue 中（对于 PTW 或者 LLPTW 发送给 Page Cache 的 hptw 请求或者是 prefetch 的请求，则不进入 MissQueue），miss 的请求进入 MissQueue 的情况有出现 bypass 的请求，L1TLB 发送给 PageCache（isFirst）且要进入 PTW 的请求，MissQueue 发送给 PTW 且 PTW 忙的请求，发送给 LLPTW 且 LLPTW 忙的请求。Page Cache 需要根据 Page Cache 命中的页表等级决定进入 Page Table Walker 或 Last Level Page Table Walker 进行查询（如果是 hptw 请求，则会发送给 HPTW）。Page Table Walker 同时只能够处理一个请求，可以访问内存中前两级页表的内容；Last Level Page Table Walker 负责访问最后一级 4KB 页表，Hypervisor Page Table Walker 同时只能处理一个请求。
 
@@ -137,9 +137,9 @@ Last Level Page Table Walker 一定会向 L1 TLB 返回回复，包括如下几�
 
 ### L2 TLB 与 Repeater 的接口时序
 
-L2 TLB 与 Repeater 的接口时序如图 5.3.5 所示。L2 TLB 与 Repeater 之间通过 valid-ready 信号进行握手，Repeater 将 L1 TLB 发出的 PTW 请求以及请求的虚拟地址发送给 L2 TLB；L2 TLB 查询得到结果后将物理地址以及对应的页表返回给 Repeater。
+L2 TLB 与 Repeater 的接口时序如 [@fig:L2TLB-repeater-time] 所示。L2 TLB 与 Repeater 之间通过 valid-ready 信号进行握手，Repeater 将 L1 TLB 发出的 PTW 请求以及请求的虚拟地址发送给 L2 TLB；L2 TLB 查询得到结果后将物理地址以及对应的页表返回给 Repeater。
 
-![L2TLB 与 Repeater 的接口时序](../figure/image38.svg)
+![L2TLB 与 Repeater 的接口时序](../figure/image38.svg){#fig:L2TLB-repeater-time}
 
 ### L2 TLB 与 L2 Cache 的接口时序
 

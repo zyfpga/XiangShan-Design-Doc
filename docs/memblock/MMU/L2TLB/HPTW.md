@@ -40,9 +40,9 @@ HPTW 得到 PTW 返回的结果后，会向 Page Cache 发送 refill 请求，�
 
 ## 整体框图
 
-HPTW 的状态转移关系图如下：
+HPTW 的状态转移关系图如 [@fig:HPTW-states] 所示。
 
-![Hypervisor Page Table Walker 状态机的状态转移图](../figure/image43.jpeg)
+![Hypervisor Page Table Walker 状态机的状态转移图](../figure/image43.jpeg){#fig:HPTW-states}
 
 状态机的各个状态的描述如下：
 
